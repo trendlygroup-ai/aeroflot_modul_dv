@@ -1,3 +1,17 @@
+import os
+import subprocess
+import sys
+
+# Модуль принудительного развертывания библиотек в облаке
+def install_packages():
+    try:
+        import plotly
+        import requests
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly", "requests"])
+
+install_packages()
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,8 +19,6 @@ from datetime import datetime, time, timedelta, date
 import plotly.graph_objects as go
 import sqlite3
 import random
-
-st.set_page_config(layout="wide", page_title="AEROFLOT MODUL DV", page_icon="✈️")
 
 DB_FILE = "aeroflot_modul_dv.db"
 CORRECT_PASSWORD = "sau2026"
@@ -89,7 +101,6 @@ if not st.session_state.authenticated:
         if st.session_state.get('password_error', False):
             st.error("🛑 Доступ заблокирован. Неверный пароль.")
     st.stop()
-
 with st.sidebar:
     st.header("📅 Параметры планирования")
     selected_dep = st.selectbox("Отделение (Хаб):", ["Хабаровск", "Владивосток", "Южно-Сахалинск", "Якутск", "Петропавловск-Камчатский", "Благовещенск", "Магадан"])
@@ -160,7 +171,6 @@ with st.sidebar:
 
 st.title(f"✈️ AEROFLOT MODUL — {selected_dep}")
 st.subheader(f"📅 Оборотный суточный план на дату: {target_date.strftime('%d.%m.%Y')} ({selected_shift})")
-
 if st.button("🔄 Синхронизировать оборотное расписание с сервера"):
     with st.spinner("Загрузка официального плана полетов ПАО Аэрофлот..."):
         real_turnaround_pool = [
@@ -255,7 +265,6 @@ if not df.empty:
             "Рег_Старт": r_start.time(), "Рег_Конец": r_end.time(),
             "Перрон_Старт": t_arr, "Перрон_Конец": t_dep
         })
-
 if calculated_intervals:
     intervals_df = pd.DataFrame(calculated_intervals)
     st.markdown("### 📅 Сводная ведомость оборота ВС и окон обслуживания")
@@ -324,3 +333,4 @@ if calculated_intervals:
     st.download_button(label=f"🖨️ Экспортировать суточный аналитический отчет на {target_date.strftime('%d.%m.%Y')}", data=html_report, file_name=f"report_{selected_dep}.html", mime="text/html")
 else:
     st.info(f"Суточный план полетов для отделения {selected_dep} пуст. Синхронизируйте данные с сервером кнопкой выше.")
+
