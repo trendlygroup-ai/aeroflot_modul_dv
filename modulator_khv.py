@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 
-# Модуль принудительного развертывания библиотек в облаке
+# Автоматическая установка необходимых графических пакетов прямо на сервере
 def install_packages():
     try:
         import plotly
@@ -19,6 +19,8 @@ from datetime import datetime, time, timedelta, date
 import plotly.graph_objects as go
 import sqlite3
 import random
+
+st.set_page_config(layout="wide", page_title="AEROFLOT MODUL DV", page_icon="✈️")
 
 DB_FILE = "aeroflot_modul_dv.db"
 CORRECT_PASSWORD = "sau2026"
@@ -228,9 +230,6 @@ if enable_charter:
     df = pd.concat([df, pd.DataFrame([{"flight_num_arr": "SU-CHARTER", "arrival_time": "15:00", "flight_num_dep": "SU-CHARTER_D", "departure_time": "17:15", "destination": "Чартер Пхукет", "aircraft_type": "Airbus A321"}])], ignore_index=True)
 
 calculated_intervals = []
-delayed_flight = None
-delay_minutes = 0
-
 if not df.empty:
     if enable_delay:
         with st.sidebar:
@@ -308,7 +307,15 @@ if calculated_intervals:
         if timeline_ramp_senior[m] > active_senior: senior_deficit_min += 1
 
     overtime_h = round(overtime_min / 60, 2)
-    cost_overtime = int(overtime_h * 2500)
+    
+    # Интеллектуальный экономический расчет повышенного ночного тарифа ТК РФ (22:00 - 06:00)
+    cost_overtime = 0
+    for m in range(minutes_in_day):
+        if timeline_ramp_total[m] > fact_ramp_total:
+            h = m // 60
+            if h >= 22 or h < 6: cost_overtime += int(3000/60)
+            else: cost_overtime += int(2500/60)
+            
     cost_risk = int(senior_deficit_min * 5000)
 
     st.markdown("### 📈 Моделирование плотности загрузки перрона (IPG Aero Стенд)")
@@ -328,9 +335,10 @@ if calculated_intervals:
     
     html_report = f'''<html><head><meta charset="UTF-8"><style>body{{font-family:Arial,sans-serif;margin:30px;}}.block{{background:#e2f0d9;border:2px solid #385723;padding:15px;}}</style></head>
     <body><h2>ПАО АЭРОФЛОТ — ФИНАНСОВО-АНАЛИТИЧЕСКИЙ ОТЧЕТ</h2><p>Хаб: {selected_dep} | Дата: {target_date.strftime("%d.%m.%Y")}</p>
-    <div class="block"><h4>💰 Экономические показатели смены:</h4><ul><li>Время дефицита: {overtime_h} ч.</li><li>ФОТ сверхурочных: {cost_overtime:,} ₽</li><li>Риск штрафов за задержки ГТО: {cost_risk:,} ₽</li></ul></div>
+    <div class="block"><h4>💰 Экономические показатели смены:</h4><ul><li>Время дефицита: {overtime_h} ч.</li><li>ФОТ сверхурочных (с учетом ночных): {cost_overtime:,} ₽</li><li>Риск штрафов за задержки ГТО: {cost_risk:,} ₽</li></ul></div>
     </body></html>'''
     st.download_button(label=f"🖨️ Экспортировать суточный аналитический отчет на {target_date.strftime('%d.%m.%Y')}", data=html_report, file_name=f"report_{selected_dep}.html", mime="text/html")
 else:
     st.info(f"Суточный план полетов для отделения {selected_dep} пуст. Синхронизируйте данные с сервером кнопкой выше.")
+
 
