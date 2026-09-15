@@ -1,17 +1,3 @@
-import os
-import subprocess
-import sys
-
-# Автоматическая установка необходимых графических пакетов прямо на сервере
-def install_packages():
-    try:
-        import plotly
-        import requests
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly", "requests"])
-
-install_packages()
-
 import streamlit as st
 import pandas as pd
 import numpy as np
